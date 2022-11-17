@@ -23,6 +23,11 @@
         android:theme="@style/Theme.CameraApp"
         tools:targetApi="31">
         <activity
+            android:name=".camera.CameraActivity"
+            android:screenOrientation="portrait"
+            android:exported="true">
+        </activity>
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

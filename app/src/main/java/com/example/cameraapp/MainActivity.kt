@@ -1,6 +1,7 @@
 package com.example.cameraapp
 
 import android.Manifest
+import android.app.Activity
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,9 +15,15 @@ import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.bumptech.glide.Glide
+import com.example.cameraapp.camera.CameraActivity
+import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.flow.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -30,7 +37,25 @@ class MainActivity : AppCompatActivity() {
     private val MY_CAMERA_REQUEST_CODE = 101
     private var mCurrentPhotoPath: String? = null
     private var startForResult=null
+    val IMAGE_REQUEST_CODE = 102
+    val resultLauncher=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+        when(it.resultCode){
+            Activity.RESULT_OK->{
+//                if(it.resultCode==IMAGE_REQUEST_CODE){
+                    intent=it.data
+                    val imagePath:String =intent.getStringExtra("imagePath").toString()
+                    if(imagePath!=""){
+                        //Glide.with(imageView).load(imagePath).into(imageView)
+                        imageView.setImageURI(Uri.parse(imagePath))
+                        Toast.makeText(this@MainActivity,"Image loaded",Toast.LENGTH_SHORT ).show()
+                    }
+  //              }
+            }
+            else->{
 
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -38,10 +63,28 @@ class MainActivity : AppCompatActivity() {
         imageView = findViewById<ImageView>(R.id.imageView)
         setupPermissions()
         button.setOnClickListener {
-            openCameraIntent()
+            //openCameraIntent()
+            GlobalScope.launch{
+                //doSomeWork()
+                val intent = Intent(this@MainActivity, CameraActivity::class.java)
+                resultLauncher.launch(intent)
+                println("Button Click: ")
+            }
+
         }
 
     }
+    suspend fun doSomeWork(){
+        val value=GlobalScope.async {
+            for(i in 1..10){
+                println("Item $i")
+                Thread.sleep(1000L)
+            }
+
+        }
+        return value.await()
+    }
+
     private fun setupPermissions() {
         val permission = ContextCompat.checkSelfPermission(this,
             Manifest.permission.CAMERA)
@@ -210,8 +253,8 @@ class MainActivity : AppCompatActivity() {
                         mImageBitmap?.compress(Bitmap.CompressFormat.PNG, _jpgQuality, outputStream)
                         outputStream.flush()
                         outputStream.close()
-                        imageView.setImageBitmap(mImageBitmap)
-
+                        //imageView.setImageBitmap(mImageBitmap)
+                        imageView.setImageURI(Uri.fromFile(imageFileName))
                         Log.i("File Saved", "File Saved on device")
                     } catch (e: java.lang.Exception) {
                         e.printStackTrace()
